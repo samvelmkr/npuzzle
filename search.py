@@ -1,3 +1,5 @@
+import frontier
+
 from collections import deque
 
 
@@ -6,6 +8,12 @@ class State:
         pass
 
     def get_action_result(self, action):
+        pass
+
+    def __eq__(self, other):
+        pass
+
+    def __hash__(self):
         pass
 
 
@@ -65,16 +73,16 @@ class BreadthFirstTreeSearch:
     def find_solution(initial_state, goal_test):
         node = Node(None, None, initial_state)
         if goal_test.is_goal(node.state):
-        	return node
-        fifo_frontier = deque()
-        fifo_frontier.append(node)
+            return node
+        fifo_frontier = frontier.BreadthFirstFrontier()
+        fifo_frontier.add(node)
         while fifo_frontier:
-            node = fifo_frontier.popleft()
+            node = fifo_frontier.remove()
             for action in node.state.get_applicable_actions():
                 new_state = node.state.get_action_result(action)
                 child = Node(node, action, new_state)
                 if goal_test.is_goal(new_state):
                     return child
-                fifo_frontier.append(child)
+                fifo_frontier.add(child)
         return None
 
