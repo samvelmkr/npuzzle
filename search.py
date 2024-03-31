@@ -1,6 +1,5 @@
-import frontier
-
-from collections import deque
+from __future__ import annotations
+from frontier import *
 
 
 class State:
@@ -44,15 +43,15 @@ class Printing:
             while node:
                 stack.append(node)
                 node = node.parent
-            stepNo = 0
+            step_no = 0
             while stack:
                 node = stack.pop()
-                print(stepNo, end = '')
-                stepNo += 1
+                print(step_no, end='')
+                step_no += 1
                 if not node.parent:
                     print(': start')
                 else:
-                    print(': ', end = '')
+                    print(': ', end='')
                     cls.print_action(node.action)
                     print()
                 print()
@@ -68,21 +67,75 @@ class Printing:
         pass
 
 
-class BreadthFirstTreeSearch:
+class Search:
+    def __init__(self, frontier_behavior: type[Frontier]) -> None:
+        self.FrontierType: type[Frontier] = frontier_behavior
+
+    def find_solution(self, initial_state, goal_test):
+        pass
+
     @staticmethod
-    def find_solution(initial_state, goal_test):
+    def get_last_search_gen_nodes(frontier: Frontier):
+        return frontier.get_generated_nodes()
+
+
+class TreeSearch(Search):
+    def __init__(self, frontier_behavior: type[Frontier]) -> None:
+        super().__init__(frontier_behavior)
+
+    def find_solution(self, initial_state, goal_test):
         node = Node(None, None, initial_state)
         if goal_test.is_goal(node.state):
             return node
-        fifo_frontier = frontier.BreadthFirstFrontier()
-        fifo_frontier.add(node)
-        while fifo_frontier:
-            node = fifo_frontier.remove()
+        frontier = self.FrontierType()
+        frontier.add(node)
+
+        while not frontier.is_empty():
+            node = frontier.pop()
             for action in node.state.get_applicable_actions():
                 new_state = node.state.get_action_result(action)
                 child = Node(node, action, new_state)
                 if goal_test.is_goal(new_state):
                     return child
-                fifo_frontier.add(child)
+                frontier.add(child)
         return None
 
+
+class BreadthFirstTreeSearch(TreeSearch):
+    def __init__(self):
+        super().__init__(
+            frontier_behavior=BreadthFirstFrontier
+        )
+
+
+class GraphSearch(Search):
+    def __init__(self, frontier_behavior: type[Frontier]) -> None:
+        super().__init__(frontier_behavior)
+
+    def find_solution(self, initial_state, goal_test):
+        node = Node(None, None, initial_state)
+        if goal_test.is_goal(node.state):
+            return node
+        frontier = self.FrontierType()
+        frontier.add(node)
+        expanded = set()
+
+        while not frontier.is_empty():
+            node = frontier.pop()
+            if node.state not in expanded:
+                if goal_test.is_goal(node.state):
+                    return node
+                expanded.add(node.state)
+                for action in node.state.get_applicable_actions():
+                    new_state = node.state.get_action_result(action)
+                    if new_state not in expanded:
+                        child = Node(node, action, new_state)
+                        frontier.add(child)
+        return None
+
+
+class BreadthFirstGraphSearch(GraphSearch):
+    def __init__(self):
+        super().__init__(
+            frontier_behavior=BreadthFirstFrontier
+        )

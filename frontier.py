@@ -2,6 +2,9 @@ from collections import deque
 
 
 class Frontier:
+    def __init__(self):
+        self.max_nodes_stored = 0
+
     def add(self, node):
         pass
 
@@ -11,15 +14,20 @@ class Frontier:
     def is_empty(self):
         pass
 
-    def remove(self):
+    def pop(self):
         pass
+
+    def get_generated_nodes(self):
+        return self.max_nodes_stored
 
 
 class DepthFirstFrontier(Frontier):
     def __init__(self):
+        super().__init__()
         self.stack = []
 
     def add(self, node):
+        self.max_nodes_stored += 1
         self.stack.append(node)
 
     def clear(self):
@@ -28,16 +36,21 @@ class DepthFirstFrontier(Frontier):
     def is_empty(self):
         return len(self.stack) == 0
 
-    def remove(self):
+    def pop(self):
         if not self.is_empty():
             return self.stack.pop()
+
+    def get_generated_nodes(self):
+        return self.stack
 
 
 class BreadthFirstFrontier(Frontier):
     def __init__(self):
+        super().__init__()
         self.queue = deque()
 
     def add(self, node):
+        self.max_nodes_stored += 1
         self.queue.append(node)
 
     def clear(self):
@@ -46,6 +59,6 @@ class BreadthFirstFrontier(Frontier):
     def is_empty(self):
         return len(self.queue) == 0
 
-    def remove(self):
+    def pop(self):
         if not self.is_empty():
             return self.queue.popleft()
