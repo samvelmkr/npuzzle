@@ -26,10 +26,11 @@ class GoalTest:
 
 
 class Node:
-    def __init__(self, parent, action, state):
+    def __init__(self, parent, action, state, depth=0):
         self.parent = parent
         self.action = action
         self.state = state
+        self.depth = depth
 
 
 class Printing:
@@ -78,6 +79,47 @@ class Search:
     def get_last_search_gen_nodes(frontier: Frontier):
         return frontier.get_generated_nodes()
 
+
+class IterativeDeepeningTreeSearch(Search):
+    def __init__(self):
+        super().__init__(
+            frontier_behavior=DepthFirstFrontier
+        )
+
+    def find_solution(self, initial_state, goal_test):
+        depth = 1
+        while True:
+            result = self.depth_limited_search(initial_state, goal_test, depth)
+
+            if result != 'cutoff':
+                return result
+
+            # depth += 1
+            depth *= 2
+
+    def depth_limited_search(self,initial_state, goal_test, l):
+        frontier = self.FrontierType()
+        node = Node(None, None, initial_state, 1)
+        frontier.add(node)
+        result = None
+
+        while not frontier.is_empty():
+            node = frontier.pop()
+            if goal_test.is_goal(node.state):
+                return node
+
+            if node.depth > l:
+                result = 'cutoff'
+                continue
+
+            for action in node.state.get_applicable_actions():
+                new_state = node.state.get_action_result(action)
+                child = Node(node, action, new_state, node.depth + 1)
+                if goal_test.is_goal(new_state):
+                    return child
+                frontier.add(child)
+
+        return result
 
 class TreeSearch(Search):
     def __init__(self, frontier_behavior: type[Frontier]) -> None:

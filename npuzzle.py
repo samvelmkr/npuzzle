@@ -125,7 +125,7 @@ def BFTS_demo():
     ])
 
     goal_test = TilesGoalTest()
-    solution = BreadthFirstTreeSearch().find_solution(initial_configuration, goal_test)
+    solution = IterativeDeepeningTreeSearch().find_solution(initial_configuration, goal_test)
     NPuzzlePrinting.print_solution(solution)
 
 
