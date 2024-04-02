@@ -31,6 +31,19 @@ class Node:
         self.action = action
         self.state = state
         self.depth = depth
+        self.value = 0
+
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __le__(self, other):
+        return self.value <= other.value
+
+    def __gt__(self, other):
+        return self.value > other.value
+
+    def __ge__(self, other):
+        return self.value >= other.value
 
 
 class Printing:
@@ -145,9 +158,13 @@ class TreeSearch(Search):
 
 class BreadthFirstTreeSearch(TreeSearch):
     def __init__(self):
-        super().__init__(
-            frontier_behavior=BreadthFirstFrontier
-        )
+        super().__init__(frontier_behavior=BreadthFirstFrontier)
+
+#
+# class GreedyBestFirstTreeSearch(TreeSearch):
+#     def __init__(self):
+#         super().__init__(frontier_behavior=BestFirstFrontier(hevristicFunc))
+
 
 
 class GraphSearch(Search):
@@ -178,6 +195,21 @@ class GraphSearch(Search):
 
 class BreadthFirstGraphSearch(GraphSearch):
     def __init__(self):
-        super().__init__(
-            frontier_behavior=BreadthFirstFrontier
-        )
+        super().__init__(frontier_behavior=BreadthFirstFrontier)
+
+
+class NodeFunction:
+    def produce(self, node):
+        pass
+
+
+# f(n)
+class EvaluationFunction(NodeFunction):
+    pass
+
+
+# h(n)
+class HeuristicFunction(NodeFunction):
+    pass
+
+    

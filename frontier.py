@@ -1,5 +1,5 @@
 from collections import deque
-
+import heapq
 
 class Frontier:
     def __init__(self):
@@ -62,3 +62,27 @@ class BreadthFirstFrontier(Frontier):
     def pop(self):
         if not self.is_empty():
             return self.queue.popleft()
+
+
+class BestFirstFrontier(Frontier):
+    def __init__(self, node_func):
+        super().__init__()
+        self.node_function = node_func
+        self.list = []
+
+    def add(self, node):
+        node.value = self.node_function.produce(node)
+        heapq.heappush(self.list, node)
+        self.max_nodes_stored += 1
+
+    def clear(self):
+        self.list.clear()
+
+    def is_empty(self):
+        return len(self.list) == 0
+
+    def pop(self):
+        if not self.is_empty():
+            return heapq.heappop(self.list)
+
+
