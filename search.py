@@ -17,7 +17,8 @@ class State:
 
 
 class Action:
-    pass
+    def cost(self):
+        pass
 
 
 class GoalTest:
@@ -81,9 +82,64 @@ class Printing:
         pass
 
 
+class NodeFunction:
+    def produce(self, node):
+        pass
+
+
+# f(n)
+class EvaluationFunction(NodeFunction):
+    pass
+
+
+# h1(n) - number of misplaced tiles
+class HeuristicFunction1(NodeFunction):
+    def produce(self, node) -> int:
+            state = node.state
+            res = 0
+
+            goal_state_tile_value = 1
+            for row in range(state.width):
+                for col in range(state.width):
+                    if state.get_tile(row, col) != 0 and \
+                            state.get_tile(row, col) != goal_state_tile_value:
+                        res += 1
+                    goal_state_tile_value += 1
+
+            return res
+
+
+# h2(n) - total Manhattan distance
+# (i.e. no. of squares from desired location of each tile)
+class HeuristicFunction2(NodeFunction):
+    @staticmethod
+    def find_tile_right_pos(value, width):
+        goal_state_tile_value = 1
+
+        for row in range(width):
+            for col in range(width):
+                if value == goal_state_tile_value:
+                    return row, col
+                goal_state_tile_value += 1
+
+
+    def produce(self, node) -> int:
+        state = node.state
+        res = 0
+
+        for row in range(state.width):
+            for col in range(state.width):
+                value = state.get_tile(row, col)
+                if value != 0:
+                    goal_position = self.find_tile_right_pos(value, state.width)
+                    res += abs(row - goal_position[0]) + abs(col - goal_position[1])
+
+        return res
+
+
 class Search:
-    def __init__(self, frontier_behavior: type[Frontier]) -> None:
-        self.FrontierType: type[Frontier] = frontier_behavior
+    def __init__(self, frontier_behavior: Frontier) -> None:
+        self.frontier: Frontier = frontier_behavior
 
     def find_solution(self, initial_state, goal_test):
         pass
@@ -95,9 +151,7 @@ class Search:
 
 class IterativeDeepeningTreeSearch(Search):
     def __init__(self):
-        super().__init__(
-            frontier_behavior=DepthFirstFrontier
-        )
+        super().__init__(frontier_behavior=DepthFirstFrontier())
 
     def find_solution(self, initial_state, goal_test):
         depth = 1
@@ -111,13 +165,12 @@ class IterativeDeepeningTreeSearch(Search):
             depth *= 2
 
     def depth_limited_search(self,initial_state, goal_test, l):
-        frontier = self.FrontierType()
         node = Node(None, None, initial_state, 1)
-        frontier.add(node)
+        self.frontier.add(node)
         result = None
 
-        while not frontier.is_empty():
-            node = frontier.pop()
+        while not self.frontier.is_empty():
+            node = self.frontier.pop()
             if goal_test.is_goal(node.state):
                 return node
 
@@ -130,57 +183,55 @@ class IterativeDeepeningTreeSearch(Search):
                 child = Node(node, action, new_state, node.depth + 1)
                 if goal_test.is_goal(new_state):
                     return child
-                frontier.add(child)
+                self.frontier.add(child)
 
         return result
 
 class TreeSearch(Search):
-    def __init__(self, frontier_behavior: type[Frontier]) -> None:
+    def __init__(self, frontier_behavior: Frontier) -> None:
         super().__init__(frontier_behavior)
 
     def find_solution(self, initial_state, goal_test):
         node = Node(None, None, initial_state)
         if goal_test.is_goal(node.state):
             return node
-        frontier = self.FrontierType()
-        frontier.add(node)
+        self.frontier.add(node)
 
-        while not frontier.is_empty():
-            node = frontier.pop()
+        while not self.frontier.is_empty():
+            node = self.frontier.pop()
             for action in node.state.get_applicable_actions():
                 new_state = node.state.get_action_result(action)
                 child = Node(node, action, new_state)
                 if goal_test.is_goal(new_state):
                     return child
-                frontier.add(child)
+                self.frontier.add(child)
         return None
 
 
 class BreadthFirstTreeSearch(TreeSearch):
     def __init__(self):
-        super().__init__(frontier_behavior=BreadthFirstFrontier)
+        super().__init__(frontier_behavior=BreadthFirstFrontier())
 
-#
-# class GreedyBestFirstTreeSearch(TreeSearch):
-#     def __init__(self):
-#         super().__init__(frontier_behavior=BestFirstFrontier(hevristicFunc))
+
+class GreedyBestFirstTreeSearch(TreeSearch):
+    def __init__(self):
+        super().__init__(frontier_behavior=BestFirstFrontier(HeuristicFunction2()))
 
 
 
 class GraphSearch(Search):
-    def __init__(self, frontier_behavior: type[Frontier]) -> None:
+    def __init__(self, frontier_behavior: Frontier) -> None:
         super().__init__(frontier_behavior)
 
     def find_solution(self, initial_state, goal_test):
         node = Node(None, None, initial_state)
         if goal_test.is_goal(node.state):
             return node
-        frontier = self.FrontierType()
-        frontier.add(node)
+        self.frontier.add(node)
         expanded = set()
 
-        while not frontier.is_empty():
-            node = frontier.pop()
+        while not self.frontier.is_empty():
+            node = self.frontier.pop()
             if node.state not in expanded:
                 if goal_test.is_goal(node.state):
                     return node
@@ -189,27 +240,10 @@ class GraphSearch(Search):
                     new_state = node.state.get_action_result(action)
                     if new_state not in expanded:
                         child = Node(node, action, new_state)
-                        frontier.add(child)
+                        self.frontier.add(child)
         return None
 
 
 class BreadthFirstGraphSearch(GraphSearch):
     def __init__(self):
-        super().__init__(frontier_behavior=BreadthFirstFrontier)
-
-
-class NodeFunction:
-    def produce(self, node):
-        pass
-
-
-# f(n)
-class EvaluationFunction(NodeFunction):
-    pass
-
-
-# h(n)
-class HeuristicFunction(NodeFunction):
-    pass
-
-    
+        super().__init__(frontier_behavior=BreadthFirstFrontier())
