@@ -20,6 +20,9 @@ class Frontier:
     def get_generated_nodes(self):
         return self.max_nodes_stored
 
+    def reset_nodes_count(self):
+        self.max_nodes_stored = 0
+
 
 class DepthFirstFrontier(Frontier):
     def __init__(self):

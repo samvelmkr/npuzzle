@@ -17,8 +17,8 @@ class State:
 
 
 class Action:
-    def cost(self):
-        pass
+    def cost(self) -> int:
+        return 1
 
 
 class GoalTest:
@@ -33,6 +33,14 @@ class Node:
         self.state = state
         self.depth = depth
         self.value = 0
+
+        #  g(n)
+        self.cost = self.calculate_cost()
+
+    def calculate_cost(self) -> int:
+        if self.parent is None:
+            return 0
+        return self.parent.cost + self.action.cost()
 
     def __lt__(self, other):
         return self.value < other.value
@@ -137,6 +145,19 @@ class HeuristicFunction2(NodeFunction):
         return res
 
 
+class AStarFunction(NodeFunction):
+    def __init__(self, heuristic_function):
+        self.heuristic = heuristic_function
+
+    def produce(self, node) -> int:
+        return node.cost + self.heuristic.produce(node)
+
+
+class UCSFunction(NodeFunction):
+    def produce(self, node) -> int:
+        return node.cost
+
+
 class Search:
     def __init__(self, frontier_behavior: Frontier) -> None:
         self.frontier: Frontier = frontier_behavior
@@ -187,13 +208,18 @@ class IterativeDeepeningTreeSearch(Search):
 
         return result
 
+
 class TreeSearch(Search):
     def __init__(self, frontier_behavior: Frontier) -> None:
         super().__init__(frontier_behavior)
 
     def find_solution(self, initial_state, goal_test):
+        total_nodes_generated = 1
+        self.frontier.reset_nodes_count()
         node = Node(None, None, initial_state)
         if goal_test.is_goal(node.state):
+            # print("Total nodes generated:", total_nodes_generated)
+            # print("Max nodes on frontier:", self.frontier.get_generated_nodes())
             return node
         self.frontier.add(node)
 
@@ -202,9 +228,17 @@ class TreeSearch(Search):
             for action in node.state.get_applicable_actions():
                 new_state = node.state.get_action_result(action)
                 child = Node(node, action, new_state)
+                total_nodes_generated += 1
+
                 if goal_test.is_goal(new_state):
+                    # print("Total nodes generated:", total_nodes_generated)
+                    # print("Max nodes on frontier:",  self.frontier.get_generated_nodes())
                     return child
+
                 self.frontier.add(child)
+
+        # print("Total nodes generated:", total_nodes_generated)
+        # print("Max nodes on frontier:", self.frontier.get_generated_nodes())
         return None
 
 
@@ -213,9 +247,24 @@ class BreadthFirstTreeSearch(TreeSearch):
         super().__init__(frontier_behavior=BreadthFirstFrontier())
 
 
-class GreedyBestFirstTreeSearch(TreeSearch):
+class DepthFirstTreeSearch(TreeSearch):
     def __init__(self):
-        super().__init__(frontier_behavior=BestFirstFrontier(HeuristicFunction2()))
+        super().__init__(frontier_behavior=DepthFirstFrontier())
+
+
+class GreedyBestFirstTreeSearch(TreeSearch):
+    def __init__(self, heuristic_function):
+        super().__init__(frontier_behavior=BestFirstFrontier(heuristic_function))
+
+
+class UCSTreeSearch(TreeSearch):
+    def __init__(self):
+        super().__init__(frontier_behavior=BestFirstFrontier(UCSFunction()))
+
+
+class AStarTreeSearch(TreeSearch):
+    def __init__(self, heuristic_function):
+        super().__init__(frontier_behavior=BestFirstFrontier(AStarFunction(heuristic_function)))
 
 
 
@@ -224,9 +273,14 @@ class GraphSearch(Search):
         super().__init__(frontier_behavior)
 
     def find_solution(self, initial_state, goal_test):
+        total_nodes_generated = 1
+        self.frontier.reset_nodes_count()
         node = Node(None, None, initial_state)
         if goal_test.is_goal(node.state):
+            # print("Total nodes generated:", total_nodes_generated)
+            # print("Max nodes on frontier:", self.frontier.get_generated_nodes())
             return node
+
         self.frontier.add(node)
         expanded = set()
 
@@ -234,16 +288,43 @@ class GraphSearch(Search):
             node = self.frontier.pop()
             if node.state not in expanded:
                 if goal_test.is_goal(node.state):
+                    # print("Total nodes generated:", total_nodes_generated)
+                    # print("Max nodes on frontier:", self.frontier.get_generated_nodes())
                     return node
                 expanded.add(node.state)
                 for action in node.state.get_applicable_actions():
                     new_state = node.state.get_action_result(action)
                     if new_state not in expanded:
                         child = Node(node, action, new_state)
+                        total_nodes_generated += 1
+
                         self.frontier.add(child)
+
+        # print("Total nodes generated:", total_nodes_generated)
+        # print("Max nodes on frontier:", self.frontier.get_generated_nodes())
         return None
 
 
 class BreadthFirstGraphSearch(GraphSearch):
     def __init__(self):
         super().__init__(frontier_behavior=BreadthFirstFrontier())
+
+
+class DepthFirstGraphSearch(GraphSearch):
+    def __init__(self):
+        super().__init__(frontier_behavior=DepthFirstFrontier())
+
+
+class GreedyBestFirstGraphSearch(GraphSearch):
+    def __init__(self, heuristic_function):
+        super().__init__(frontier_behavior=BestFirstFrontier(heuristic_function))
+
+
+class AStarGraphSearch(GraphSearch):
+    def __init__(self, heuristic_function):
+        super().__init__(frontier_behavior=BestFirstFrontier(AStarFunction(heuristic_function)))
+
+
+class UCSGraphSearch(GraphSearch):
+    def __init__(self):
+        super().__init__(frontier_behavior=BestFirstFrontier(UCSFunction()))
